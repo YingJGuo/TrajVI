@@ -2,6 +2,8 @@
 
 # TrajVI
 
+<img src="Fig/Fig1.png" alt="TrajVI overview" width="220">
+
 ### Trajectory-Guided Video Inpainting for Endoscopic Videos
 
 <p>
@@ -19,7 +21,7 @@ repair, then CoTracker3 trajectories guide long-term feature propagation (TLP)
 and trajectory-aware temporal refinement (TTR).
 
 <div align="center">
-  <img src="methods_figure.png" alt="TrajVI method overview" width="96%">
+  <img src="Fig/methods_figure.png" alt="TrajVI method overview" width="96%">
 </div>
 
 ## Results
@@ -28,7 +30,7 @@ On the Endo-STTN benchmark, the released Full V4 model obtains **32.72 dB** PSNR
 
 
 <div align="center">
-  <img src="qualitative.png" alt="Qualitative comparison" width="96%">
+  <img src="Fig/qualitative.png" alt="Qualitative comparison" width="96%">
 </div>
 
 ## Installation
