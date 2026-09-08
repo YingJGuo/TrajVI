@@ -24,11 +24,8 @@ and trajectory-aware temporal refinement (TTR).
 
 ## Results
 
-On the Endo-STTN benchmark, the released Full V4 model obtains:
+On the Endo-STTN benchmark, the released Full V4 model obtains **32.72 dB** PSNR-Crop and **0.8684** SSIM-Crop:
 
-| PSNR-Crop | SSIM-Crop |
-| ---: | ---: |
-| **32.72 dB** | **0.8684** |
 
 <div align="center">
   <img src="qualitative.png" alt="Qualitative comparison" width="96%">
