@@ -1,10 +1,8 @@
 <div align="center">
 
-# TrajVI
+# TrajVI: Trajectory-Guided Long-term Correspondence For Endoscopic Video Inpainting
 
 <img src="Fig/Fig1.png" alt="TrajVI overview" width="220">
-
-### Trajectory-Guided Video Inpainting for Endoscopic Videos
 
 <p>
   <a href="https://github.com/YingJGuo/TrajVI"><img src="https://img.shields.io/badge/Code-TrajVI-181717?logo=github" alt="Code"></a>
