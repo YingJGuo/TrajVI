@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 import torch
 
@@ -7,12 +8,16 @@ import torch
 class CoTracker3RefSelector:
     def __init__(self, checkpoint_path, repo_path, device='cuda',
                  retrieval_window=60, query_batch_size=512, iterations=2):
-        if not repo_path:
-            raise ValueError('repo_path is required')
         if retrieval_window <= 0 or query_batch_size <= 0 or iterations <= 0:
             raise ValueError('retrieval_window, query_batch_size and iterations must be positive')
         self.checkpoint_path = checkpoint_path
-        self.repo_path = repo_path
+        if repo_path:
+            repo = Path(repo_path).expanduser()
+            if not repo.is_absolute():
+                repo = Path.cwd() / repo
+        else:
+            repo = Path(__file__).resolve().parents[1] / 'third_party' / 'co_tracker'
+        self.repo_path = repo.resolve()
         self.device = torch.device(device)
         self.retrieval_window = int(retrieval_window)
         self.query_batch_size = int(query_batch_size)
@@ -22,7 +27,11 @@ class CoTracker3RefSelector:
     @property
     def model(self):
         if self._model is None:
-            repo_path = os.path.realpath(self.repo_path)
+            repo_path = os.path.realpath(str(self.repo_path))
+            expected_root = os.path.join(repo_path, 'cotracker')
+            if not os.path.isdir(expected_root):
+                raise FileNotFoundError(
+                    f'CoTracker3 package was not found at {expected_root}')
             paths = []
             for path_entry in sys.path:
                 resolved = os.path.realpath(path_entry or os.getcwd())
@@ -43,7 +52,6 @@ class CoTracker3RefSelector:
 
             predictor_file = os.path.realpath(
                 sys.modules[CoTrackerPredictor.__module__].__file__)
-            expected_root = os.path.join(repo_path, 'cotracker')
             if not predictor_file.startswith(expected_root):
                 raise ImportError(
                     f'CoTracker3 was imported from {predictor_file}, '
@@ -53,6 +61,7 @@ class CoTracker3RefSelector:
                 checkpoint=self.checkpoint_path,
                 offline=True,
                 window_len=self.retrieval_window,
+                iterations=self.iterations,
             ).to(self.device).eval()
             for parameter in self._model.parameters():
                 parameter.requires_grad = False

@@ -333,11 +333,14 @@ def parse_args():
     parser.add_argument("--frame-dir", default="JPEGImages")
     parser.add_argument("--mask-dir", default="AnnotationsShifted")
     parser.add_argument("--checkpoint", required=True,
-                        help="Full V4 generator checkpoint, e.g. gen_015000.pth")
+                        help="Full V4 generator checkpoint, e.g. gen_best_psnr.pth")
     parser.add_argument("--raft-checkpoint", required=True)
     parser.add_argument("--flow-checkpoint", required=True)
     parser.add_argument("--cotracker-checkpoint", required=True)
-    parser.add_argument("--cotracker-repo", required=True)
+    parser.add_argument(
+        "--cotracker-repo", default=None,
+        help="Optional CoTracker3 source directory; bundled source is used by default.",
+    )
     parser.add_argument("--output-root", required=True)
     parser.add_argument("--gpus", type=int, nargs="+", default=[0])
     parser.add_argument("--height", type=int, default=288)
@@ -374,7 +377,7 @@ def main():
     buckets = _split(items, len(args.gpus))
     print(f"Loaded {len(items)} videos from {args.dataset_name}/{args.split}.json")
     print("Full V4 protocol: context=60, stride=1, queries=512->2048, "
-          "iterations=2, support=mask_internal/nearest/k4, fixed_gate=0.25")
+          "iterations=2")
 
     if len(args.gpus) == 1:
         _worker(0, args.gpus[0], buckets[0], args)

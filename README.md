@@ -1,78 +1,89 @@
+<div align="center">
+
 # TrajVI
 
-Inference-only release of the Full V4 model for the EndoSTTN data format.
+### Trajectory-Guided Video Inpainting for Endoscopic Videos
 
-The released pipeline is:
+<p>
+  <a href="https://github.com/YingJGuo/TrajVI"><img src="https://img.shields.io/badge/Code-TrajVI-181717?logo=github" alt="Code"></a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/PyTorch-CUDA-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch CUDA">
+  <img src="https://img.shields.io/badge/Task-Video%20Inpainting-0A7EA4" alt="Video inpainting">
+</p>
 
-```text
-completed RAFT flow
-  -> full-video coarse repair
-  -> 60-frame repaired-context CoTracker3 trajectories
-  -> TLP (long-term region-warp DCN)
-  -> TTR (sparse feature trajectory transformer)
-  -> SparseTransformer + decoder
-```
+</div>
 
-This directory intentionally excludes training code, CoWTracker, ablation
-routes, profiling tools, and experiment-specific visualizers.
+TrajVI uses long-term point trajectories to improve video inpainting in
+endoscopic scenes. A short-term flow-guided branch first produces a coarse
+repair, then CoTracker3 trajectories guide long-term feature propagation (TLP)
+and trajectory-aware temporal refinement (TTR).
 
-## Dependencies
+<div align="center">
+  <img src="methods_figure.png" alt="TrajVI method overview" width="96%">
+</div>
 
-Install PyTorch and torchvision for the CUDA version on the target machine,
-then install the small Python dependency set:
+## Results
+
+On the Endo-STTN benchmark, the released Full V4 model obtains:
+
+| PSNR-Crop | SSIM-Crop |
+| ---: | ---: |
+| **32.72 dB** | **0.8684** |
+
+<div align="center">
+  <img src="qualitative.png" alt="Qualitative comparison" width="96%">
+</div>
+
+## Installation
+
+Python 3.10 is recommended. Install a PyTorch and torchvision build matching
+your CUDA version, then install the remaining dependencies:
 
 ```bash
-pip install -r requirements.txt
+conda create -n trajvi python=3.10 -y
+conda activate trajvi
+
+# Install a matching PyTorch/torchvision build first.
+python -m pip install -r requirements.txt
 ```
 
-CoTracker3 is kept as an external dependency because its repository and
-checkpoint are large. Clone the compatible CoTracker repository separately
-and pass its path with `--cotracker-repo`.
+## Dataset
 
-The inference command also needs four weights. They are intentionally not
-committed to this source tree because of their size and their separate
-licenses; see [weights/README.md](weights/README.md) for the expected
-filenames and locations.
-
-- the released Full V4 generator checkpoint;
-- the official RAFT checkpoint;
-- the flow-completion checkpoint;
-- the CoTracker3 Offline checkpoint.
-
-## Dataset Layout
-
-The historical EndoSTTN zip layout is supported directly:
+Prepare the Endo-STTN dataset with the
+[official instructions](https://github.com/endomapper/Endo-STTN/tree/main/dataset_prep).
+The default inference layout is:
 
 ```text
 DATA_ROOT/
-  DATASET_NAME/
-    train.json
-    test.json
-    JPEGImages/
-      video_name.zip
-    AnnotationsShifted/
-      video_name.zip
+└── Endo_STTN/
+    ├── test.json
+    ├── JPEGImages/
+    │   └── video_name.zip
+    └── AnnotationsShifted/
+        └── video_name.zip
 ```
 
-Each zip contains one image per frame. Folder-backed videos are also
-supported with `--storage-format folder`; in that mode each video is a
-subdirectory under both `--frame-dir` and `--mask-dir`.
+Each frame archive and its matching mask archive should contain the same
+number of frames. Folder-based input is also supported with
+`--storage-format folder`.
+
+## Pretrained Weights
+
+Download the pretrained weights from
+[Google Drive](https://drive.google.com/drive/folders/1KLLVyYrOpX2DYMicZEWu4UEP0yzbpuOW?usp=sharing)
+and place all files in `weights/`:
+
+```text
+weights/
+├── gen_best_psnr.pth
+├── raft-things.pth
+├── recurrent_flow_completion.pth
+└── scaled_offline.pth
+```
 
 ## Inference
 
-The following is the production Quality protocol used by Full V4:
-
-- 288 x 288 processing resolution;
-- 10-frame local windows with stride 5;
-- 60-frame, temporal-stride-1 trajectory context;
-- 512 support queries interpolated to at most 2048 masked feature queries;
-- CoTracker3 update iterations = 2;
-- mask-internal nearest-neighbor support interpolation with `k=4`;
-- fixed TLP update gate = 0.25;
-- frame results saved under the official `overlaid/notshifted/frameresult`
-  layout.
-
-Example:
+Run the Full V4 model from the repository root:
 
 ```bash
 python infer.py \
@@ -82,31 +93,43 @@ python infer.py \
   --storage-format zip \
   --frame-dir JPEGImages \
   --mask-dir AnnotationsShifted \
-  --checkpoint /path/to/full_v4/gen_015000.pth \
-  --raft-checkpoint /path/to/raft-things.pth \
-  --flow-checkpoint /path/to/flow_completion.pth \
-  --cotracker-checkpoint /path/to/scaled_offline.pth \
-  --cotracker-repo /path/to/co-tracker \
-  --output-root /path/to/results/full_v4 \
-  --gpus 0 \
-  --skip-existing
+  --checkpoint weights/gen_best_psnr.pth \
+  --raft-checkpoint weights/raft-things.pth \
+  --flow-checkpoint weights/recurrent_flow_completion.pth \
+  --cotracker-checkpoint weights/scaled_offline.pth \
+  --output-root results/trajvi_full_v4 \
+  --gpus 0
 ```
 
-PNG is the default frame-result format so that evaluation does not include
-JPEG artifacts. Use `--frame-format jpg --frame-quality 95` when smaller
-output is preferred.
+The generated MP4 and lossless frame results are saved under:
 
-Use `--video VIDEO_NAME` one or more times to run a subset. Use more than one
-GPU by passing several IDs, for example `--gpus 0 1 2 3`.
+```text
+results/trajvi_full_v4/video_name/
+├── inpaint_out.mp4
+└── overlaid/notshifted/frameresult/*.png
+```
+
+Useful options:
+
+```bash
+# Run selected videos.
+python infer.py ... --video VIDEO_NAME
+
+# Run a short smoke test.
+python infer.py ... --video VIDEO_NAME --max-frames 60
+
+# Use multiple GPUs.
+python infer.py ... --gpus 0 1
+```
 
 ## Evaluation
 
-Evaluate the saved frame results with CPU/skimage metrics:
+Evaluate the saved frame results with the CPU/skimage protocol:
 
 ```bash
 python evaluate.py \
-  --output-root /path/to/results/full_v4 \
-  --result-root /path/to/results/full_v4_metrics \
+  --output-root results/trajvi_full_v4 \
+  --result-root results/trajvi_full_v4_metrics \
   --method TrajVI-Full-V4 \
   --data-root /path/to/data \
   --dataset-name Endo_STTN \
@@ -117,9 +140,14 @@ python evaluate.py \
   --mask-dilation 8
 ```
 
-The evaluator writes per-video results, macro-average metrics, weighted
-metrics, and the exact protocol to `result-root`.
+The macro-average metrics are written to
+`official_cpu_metrics_macro.csv`. The main columns are `PSNRCropavg`,
+`SSIMCropFullavg`, and `MSECropavg`.
 
-The principal table columns are `PSNRCropavg`, `SSIMCropFullavg`, and
-`MSECropavg`. `SSIMCropFullavg` is the mean of the full-image SSIM map inside
-the mask, matching the EndoSTTN/DAEVI CPU evaluation protocol.
+## Acknowledgements
+
+TrajVI builds on [Endo-STTN](https://github.com/endomapper/Endo-STTN),
+[DAEVI](https://github.com/FrancisXZhang/DAEVI),
+[ProPainter](https://github.com/sczhou/ProPainter),
+[RAFT](https://github.com/princeton-vl/RAFT), and
+[CoTracker3](https://github.com/facebookresearch/co-tracker).
