@@ -1,6 +1,6 @@
 <div align="center">
 
-# TrajVI: Exploting Point Trajectories For Long-term Correspondence In Endoscopic Video Inpainting
+# TrajVI: Exploiting Point Trajectories For Long-term Correspondence In Endoscopic Video Inpainting
 
 <img src="Fig/Fig1.png" alt="TrajVI overview" width="220">
 
