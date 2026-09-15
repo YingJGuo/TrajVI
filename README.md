@@ -1,6 +1,6 @@
 <div align="center">
 
-# TrajVI: Exploiting Point Trajectories For Long-term Correspondence In Endoscopic Video Inpainting
+# TrajVI: Explicit Long-Range Correspondence via Point Trajectories for Endoscopic Video Inpainting
 
 <img src="Fig/Fig1.png" alt="TrajVI overview" width="220">
 
@@ -15,7 +15,7 @@
 
 TrajVI uses long-term point trajectories to improve video inpainting in
 endoscopic scenes. A short-term flow-guided branch first produces a coarse
-repair, then CoTracker3 trajectories guide long-term feature propagation (TLP)
+repair, then CoTracker3 trajectories guide long-range feature propagation (TLP)
 and trajectory-aware temporal refinement (TTR).
 
 <div align="center">
